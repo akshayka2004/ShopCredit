@@ -1,0 +1,104 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Login - ShopCredit{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 40px; margin-top: 20px;">
+    <h3 style="font-weight: 700; color: #1e3a5f; margin-bottom: 8px;">Welcome Back! 👋</h3>
+    <p style="color: #64748b; font-size: 0.95rem; margin: 0;">Sign in to access your dashboard</p>
+</div>
+
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger" style="margin-bottom: 24px;">
+    {{ form.non_field_errors|first }}
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- Username Field -->
+    <div style="margin-bottom: 20px;">
+        <label for="id_username" class="form-label" style="font-weight: 600; color: #334155;">Username</label>
+        <div style="position: relative;">
+            <span
+                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem;">👤</span>
+            <input type="text" name="username" id="id_username" class="form-control" style="padding-left: 48px;"
+                placeholder="Enter your username" value="{{ form.username.value|default:'' }}" required>
+        </div>
+        {% if form.username.errors %}
+        <div style="color: #ef4444; font-size: 0.8rem; margin-top: 6px;">{{ form.username.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Password Field -->
+    <div style="margin-bottom: 20px;">
+        <label for="id_password" class="form-label" style="font-weight: 600; color: #334155;">Password</label>
+        <div style="position: relative;">
+            <span
+                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem;">🔒</span>
+            <input type="password" name="password" id="id_password" class="form-control" style="padding-left: 48px;"
+                placeholder="Enter your password" required>
+        </div>
+        {% if form.password.errors %}
+        <div style="color: #ef4444; font-size: 0.8rem; margin-top: 6px;">{{ form.password.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Remember Me -->
+    <div style="margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+        <input type="checkbox" name="remember_me" id="id_remember_me"
+            style="width: 18px; height: 18px; accent-color: #00b4d8;">
+        <label for="id_remember_me" style="color: #475569; font-size: 0.9rem; cursor: pointer;">Remember me</label>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary w-100"
+        style="padding: 16px; font-size: 1rem; font-weight: 600; border-radius: 12px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border: none; box-shadow: 0 4px 20px rgba(30, 58, 95, 0.3);">
+        Sign In →
+    </button>
+
+    <!-- Divider -->
+    <div style="text-align: center; margin: 28px 0; position: relative;">
+        <hr style="border-color: #e2e8f0;">
+        <span
+            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 16px; color: #94a3b8; font-size: 0.85rem;">or</span>
+    </div>
+
+    <!-- Register Link -->
+    <p style="text-align: center; color: #64748b; margin: 0;">
+        Don't have an account?
+        <a href="{% url 'accounts:register' %}" style="color: #00b4d8; font-weight: 600; text-decoration: none;">Create
+            Account</a>
+    </p>
+</form>
+
+<!-- Demo Credentials Box -->
+<div
+    style="margin-top: 32px; padding: 20px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; border: 1px solid #e2e8f0;">
+    <div
+        style="font-size: 0.8rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 1px; margin-bottom: 12px; font-weight: 600;">
+        Demo Credentials</div>
+    <div style="display: grid; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            <span
+                style="background: linear-gradient(135deg, #1e3a5f, #2d5a87); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">ADMIN</span>
+            <code
+                style="color: #475569; background: white; padding: 4px 8px; border-radius: 4px;">admin / admin123</code>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            <span
+                style="background: linear-gradient(135deg, #10b981, #34d399); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">SHOP</span>
+            <code
+                style="color: #475569; background: white; padding: 4px 8px; border-radius: 4px;">shopowner1 / demo1234</code>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            <span
+                style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">WHOLESALE</span>
+            <code
+                style="color: #475569; background: white; padding: 4px 8px; border-radius: 4px;">wholesaler1 / demo1234</code>
+        </div>
+    </div>
+</div>
+{% endblock %}

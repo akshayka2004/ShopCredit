@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - ShopCredit{% endblock %}
+{% block page_title %}Wholesaler Dashboard{% endblock %}
+
+{% block content %}
+<!-- Premium Welcome Banner -->
+<div class="welcome-banner">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h2>Welcome, {{ user.username }}!</h2>
+            <p>Manage your inventory, approve orders, and monitor customer risk.</p>
+        </div>
+        <div class="col-lg-5 text-lg-end mt-3 mt-lg-0">
+            <div class="banner-badge">
+                <span>Rs.</span> {{ monthly_revenue|floatformat:0|default:"0" }} <small style="opacity: 0.8;">this month</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <!-- Total Products -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary card-animated">
+            <div class="card-body">
+                <div class="stat-icon">Products</div>
+                <div class="stat-value">{{ total_products|default:"0" }}</div>
+                <div class="stat-label">Total Products</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Orders -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card {% if pending_orders > 0 %}warning{% else %}success{% endif %} card-animated">
+            <div class="card-body">
+                <div class="stat-icon">Orders</div>
+                <div class="stat-value">{{ pending_orders|default:"0" }}</div>
+                <div class="stat-label">Pending Orders</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card success card-animated">
+            <div class="card-body">
+                <div class="stat-icon">Revenue</div>
+                <div class="stat-value">Rs.{{ monthly_revenue|floatformat:0|default:"0" }}</div>
+                <div class="stat-label">Revenue (30 days)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Customers -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary card-animated">
+            <div class="card-body">
+                <div class="stat-icon">Customers</div>
+                <div class="stat-value">{{ customer_count|default:"0" }}</div>
+                <div class="stat-label">Customers</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pending Approval -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Orders Awaiting Approval</span>
+                <a href="{% url 'core:order_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if pending_approval %}
+                <div class="table-responsive">
+                    <table class="table table-premium mb-0">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Shop Owner</th>
+                                <th>Amount</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in pending_approval %}
+                            <tr>
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                            {{ order.shop_owner.username|slice:":1"|upper }}
+                                        </div>
+                                        <span>{{ order.shop_owner.username }}</span>
+                                    </div>
+                                </td>
+                                <td><strong>Rs.{{ order.total_amount|floatformat:2 }}</strong></td>
+                                <td>
+                                    <a href="{% url 'core:order_approve' order.pk %}" class="btn btn-sm btn-success">Approve</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-state-icon">OK</span>
+                    <h5>All Clear!</h5>
+                    <p>No orders waiting for your approval.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- High Risk Customers -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>High Risk Customers</span>
+                <a href="{% url 'analytics:risk_overview' %}" class="btn btn-sm btn-outline-danger">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if high_risk_customers %}
+                <div class="table-responsive">
+                    <table class="table table-premium mb-0">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Outstanding</th>
+                                <th>Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for profile in high_risk_customers %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.7rem; background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);">
+                                            {{ profile.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <strong>{{ profile.business_name|default:profile.user.username }}</strong>
+                                    </div>
+                                </td>
+                                <td><strong class="text-danger">Rs.{{ profile.current_outstanding|floatformat:2 }}</strong></td>
+                                <td>
+                                    <span class="risk-badge high">High Risk</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-state-icon">Great!</span>
+                    <h5>Looking Good!</h5>
+                    <p>No high-risk customers at the moment.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Recent Transactions</span>
+        <a href="{% url 'core:transaction_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_transactions %}
+        <div class="table-responsive">
+            <table class="table table-premium mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for txn in recent_transactions %}
+                    <tr>
+                        <td>{{ txn.transaction_date|date:"d M Y" }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="user-avatar" style="width: 28px; height: 28px; font-size: 0.7rem;">
+                                    {{ txn.user.username|slice:":1"|upper }}
+                                </div>
+                                <span>{{ txn.user.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if txn.transaction_type == 'credit' %}
+                            <span class="badge bg-warning" style="font-size: 0.75rem;">Credit</span>
+                            {% else %}
+                            <span class="badge bg-success" style="font-size: 0.75rem;">Payment</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong {% if txn.transaction_type == 'payment' %}class="text-success"{% else %}class="text-warning"{% endif %}>
+                                {% if txn.transaction_type == 'payment' %}+{% else %}-{% endif %}Rs.{{ txn.amount|floatformat:2 }}
+                            </strong>
+                        </td>
+                        <td class="text-muted">{{ txn.description|truncatechars:40 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-state-icon">Transactions</span>
+            <h5>No Transactions Yet</h5>
+            <p>Transaction history will appear here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card quick-actions">
+    <div class="card-header">Quick Actions</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'core:product_add' %}" class="btn btn-primary w-100 py-3">
+                    <span class="btn-icon">+</span> Add Product
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'analytics:dashboard' %}" class="btn btn-success w-100 py-3">
+                    <span class="btn-icon">Chart</span> View Analytics
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'reports:risk_summary' %}" class="btn btn-outline-primary w-100 py-3">
+                    <span class="btn-icon">Report</span> Risk Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

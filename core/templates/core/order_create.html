@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Order - ShopCredit{% endblock %}
+{% block page_title %}Create New Order{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Order Form -->
+    <div class="col-lg-8">
+        <form method="post" id="orderForm">
+            {% csrf_token %}
+
+            <!-- Select Wholesaler -->
+            <div class="card mb-4">
+                <div class="card-header">1️⃣ Select Wholesaler</div>
+                <div class="card-body">
+                    <select name="wholesaler" id="wholesalerSelect" class="form-select" required>
+                        <option value="">Choose a wholesaler...</option>
+                        {% for w in wholesalers %}
+                        <option value="{{ w.id }}">
+                            {{ w.profile.business_name|default:w.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Select Products -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>2️⃣ Add Products</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addProductBtn" disabled>
+                        ➕ Add Product
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="productsList">
+                        <!-- Products will be added here dynamically -->
+                    </div>
+
+                    <div id="noProductsMsg" class="text-center text-muted py-4">
+                        <p>Select a wholesaler to see available products</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMI Options -->
+            <div class="card mb-4">
+                <div class="card-header">3️⃣ Payment Plan</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check p-3 border rounded mb-2">
+                                <input class="form-check-input" type="radio" name="emi_count" value="1" id="emi1">
+                                <label class="form-check-label" for="emi1">
+                                    <strong>1 Payment</strong>
+                                    <small class="d-block text-muted">Full amount in 7 days</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check p-3 border rounded mb-2">
+                                <input class="form-check-input" type="radio" name="emi_count" value="2" id="emi2">
+                                <label class="form-check-label" for="emi2">
+                                    <strong>2 Payments</strong>
+                                    <small class="d-block text-muted">Every 15 days</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check p-3 border rounded border-primary bg-light mb-2">
+                                <input class="form-check-input" type="radio" name="emi_count" value="4" id="emi4"
+                                    checked>
+                                <label class="form-check-label" for="emi4">
+                                    <strong>4 Payments</strong>
+                                    <small class="d-block text-muted">Weekly (Recommended)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card mb-4">
+                <div class="card-header">4️⃣ Additional Notes (Optional)</div>
+                <div class="card-body">
+                    <textarea name="notes" class="form-control" rows="2"
+                        placeholder="Any special instructions..."></textarea>
+                </div>
+            </div>
+
+            <!-- Hidden field for items JSON -->
+            <input type="hidden" name="items" id="itemsJson">
+
+            <!-- Submit -->
+            <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" disabled>
+                🛒 Place Order
+            </button>
+        </form>
+    </div>
+
+    <!-- Order Summary Sidebar -->
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header">📋 Order Summary</div>
+            <div class="card-body">
+                <!-- Credit Info -->
+                <div class="mb-3 p-3 rounded" style="background: rgba(0, 137, 123, 0.1);">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Credit Limit</span>
+                        <strong>₹{{ credit_limit|floatformat:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Available Credit</span>
+                        <strong class="text-success">₹{{ available_credit|floatformat:0 }}</strong>
+                    </div>
+                </div>
+
+                <!-- Items Summary -->
+                <div id="summaryItems" class="mb-3">
+                    <p class="text-muted text-center">No items added</p>
+                </div>
+
+                <hr>
+
+                <!-- Total -->
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="h5">Total</span>
+                    <span class="h5 text-primary" id="orderTotal">₹0.00</span>
+                </div>
+
+                <!-- EMI Breakdown -->
+                <div id="emiBreakdown" class="text-muted small">
+                    <p class="mb-1">EMI Amount: <span id="emiAmount">₹0.00</span></p>
+                    <p class="mb-0">Due Dates: Every 7 days</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Product Row Template -->
+<template id="productRowTemplate">
+    <div class="product-row border rounded p-3 mb-2">
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <select class="form-select product-select" required>
+                    <option value="">Select product...</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control quantity-input" value="1" min="1" placeholder="Qty">
+            </div>
+            <div class="col-md-3">
+                <span class="item-total fw-bold">₹0.00</span>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-product">✕</button>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Product data and order state
+    let availableProducts = [];
+    let orderItems = [];
+    const availableCredit = {{ available_credit|default:0 }};
+
+    // DOM Elements
+    const wholesalerSelect = document.getElementById('wholesalerSelect');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const productsList = document.getElementById('productsList');
+    const noProductsMsg = document.getElementById('noProductsMsg');
+    const orderForm = document.getElementById('orderForm');
+    const itemsJson = document.getElementById('itemsJson');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Fetch products when wholesaler changes
+    wholesalerSelect.addEventListener('change', async function () {
+        const wholesalerId = this.value;
+
+        if (!wholesalerId) {
+            availableProducts = [];
+            productsList.innerHTML = '';
+            noProductsMsg.style.display = 'block';
+            addProductBtn.disabled = true;
+            updateSummary();
+            return;
+        }
+
+        try {
+            // Simulated products - in real app, fetch from API
+            // const response = await fetch(`/core/api/products/${wholesalerId}/`);
+            // availableProducts = await response.json();
+
+            // For now, enable adding products
+            addProductBtn.disabled = false;
+            noProductsMsg.style.display = 'none';
+
+            // Add first product row
+            if (productsList.children.length === 0) {
+                addProductRow();
+            }
+        } catch (error) {
+            console.error('Error fetching products:', error);
+        }
+    });
+
+    // Add product row
+    addProductBtn.addEventListener('click', addProductRow);
+
+    function addProductRow() {
+        const template = document.getElementById('productRowTemplate');
+        const row = template.content.cloneNode(true);
+
+        // Populate product select (simulated data for demo)
+        const select = row.querySelector('.product-select');
+        select.innerHTML = `
+            <option value="">Select product...</option>
+            <option value="1" data-price="500">Product A - ₹500</option>
+            <option value="2" data-price="750">Product B - ₹750</option>
+            <option value="3" data-price="1200">Product C - ₹1200</option>
+        `;
+
+        // Event listeners
+        select.addEventListener('change', updateItemTotal);
+        row.querySelector('.quantity-input').addEventListener('change', updateItemTotal);
+        row.querySelector('.remove-product').addEventListener('click', function () {
+            this.closest('.product-row').remove();
+            updateSummary();
+        });
+
+        productsList.appendChild(row);
+        noProductsMsg.style.display = 'none';
+    }
+
+    function updateItemTotal(e) {
+        const row = e.target.closest('.product-row');
+        const select = row.querySelector('.product-select');
+        const quantity = parseInt(row.querySelector('.quantity-input').value) || 0;
+        const price = parseFloat(select.selectedOptions[0]?.dataset.price) || 0;
+        const total = price * quantity;
+
+        row.querySelector('.item-total').textContent = `₹${total.toFixed(2)}`;
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const rows = productsList.querySelectorAll('.product-row');
+        let total = 0;
+        const items = [];
+        let summaryHtml = '';
+
+        rows.forEach(row => {
+            const select = row.querySelector('.product-select');
+            const quantity = parseInt(row.querySelector('.quantity-input').value) || 0;
+            const price = parseFloat(select.selectedOptions[0]?.dataset.price) || 0;
+            const productId = select.value;
+            const productName = select.selectedOptions[0]?.text.split(' - ')[0] || '';
+
+            if (productId && quantity > 0) {
+                const itemTotal = price * quantity;
+                total += itemTotal;
+
+                items.push({
+                    product_id: parseInt(productId),
+                    quantity: quantity
+                });
+
+                summaryHtml += `
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>${productName} × ${quantity}</span>
+                        <span>₹${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            }
+        });
+
+        // Update summary display
+        document.getElementById('summaryItems').innerHTML = summaryHtml || '<p class="text-muted text-center">No items added</p>';
+        document.getElementById('orderTotal').textContent = `₹${total.toFixed(2)}`;
+
+        // Update EMI amount based on selected EMI count
+        const emiCount = parseInt(document.querySelector('input[name="emi_count"]:checked').value);
+        const emiAmount = total / emiCount;
+        document.getElementById('emiAmount').textContent = `₹${emiAmount.toFixed(2)}`;
+
+        // Update items JSON for form submission
+        itemsJson.value = JSON.stringify(items);
+
+        // Enable/disable submit button
+        submitBtn.disabled = items.length === 0 || total > availableCredit;
+
+        if (total > availableCredit) {
+            submitBtn.textContent = '❌ Exceeds Credit Limit';
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-danger');
+        } else {
+            submitBtn.textContent = '🛒 Place Order';
+            submitBtn.classList.remove('btn-danger');
+            submitBtn.classList.add('btn-primary');
+        }
+    }
+
+    // Update EMI breakdown when payment plan changes
+    document.querySelectorAll('input[name="emi_count"]').forEach(radio => {
+        radio.addEventListener('change', updateSummary);
+    });
+
+    // Form validation
+    orderForm.addEventListener('submit', function (e) {
+        const items = JSON.parse(itemsJson.value);
+        if (items.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one product to your order.');
+        }
+    });
+</script>
+{% endblock %}

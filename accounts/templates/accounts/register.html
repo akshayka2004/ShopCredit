@@ -1,0 +1,138 @@
+{% extends 'base_auth.html' %}
+{% load static %}
+
+{% block title %}Register - ShopCredit{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h4 class="fw-bold mb-1">Create Your Account</h4>
+    <p class="text-muted">Join ShopCredit today</p>
+</div>
+
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- 1. Account Details -->
+    <h6 class="text-uppercase text-primary fw-bold mb-3 small" style="letter-spacing: 1px;">
+        <i class="bi bi-shield-lock me-1"></i> Account Details
+    </h6>
+
+    <div class="row g-3">
+        <!-- Username -->
+        <div class="col-12">
+            <label for="id_username" class="form-label">Username <span class="text-danger">*</span></label>
+            {{ form.username }}
+            {% if form.username.errors %}
+            <div class="text-danger small mt-1">{{ form.username.errors|first }}</div>
+            {% endif %}
+            <div class="form-text">Choose a unique username for logging in.</div>
+        </div>
+
+        <!-- Email -->
+        <div class="col-12">
+            <label for="id_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+            {{ form.email }}
+            {% if form.email.errors %}
+            <div class="text-danger small mt-1">{{ form.email.errors|first }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Phone -->
+        <div class="col-12">
+            <label for="id_phone" class="form-label">Phone Number</label>
+            {{ form.phone }}
+        </div>
+
+        <!-- Password -->
+        <div class="col-md-6">
+            <label for="id_password1" class="form-label">Password <span class="text-danger">*</span></label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+            <div class="text-danger small mt-1">{{ form.password1.errors|first }}</div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <label for="id_password2" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+            <div class="text-danger small mt-1">{{ form.password2.errors|first }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 2. Role Selection -->
+    <hr class="my-4" style="opacity: 0.1;">
+    <h6 class="text-uppercase text-primary fw-bold mb-3 small" style="letter-spacing: 1px;">
+        <i class="bi bi-person-badge me-1"></i> Select Role
+    </h6>
+
+    <div class="mb-3">
+        <label class="form-label mb-3">I am a... <span class="text-danger">*</span></label>
+        <div class="role-options">
+            {% for radio in form.role %}
+            <label class="role-card">
+                {{ radio.tag }}
+                <div class="role-card-inner">
+                    <div class="role-card-icon">
+                        {% if 'shop_owner' in radio.choice_value %}🛍️
+                        {% else %}🏭{% endif %}
+                    </div>
+                    <div class="role-card-title">{{ radio.choice_label }}</div>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+        {% if form.role.errors %}
+        <div class="text-danger small mt-2">{{ form.role.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <!-- 3. Business Information -->
+    <hr class="my-4" style="opacity: 0.1;">
+    <h6 class="text-uppercase text-primary fw-bold mb-3 small" style="letter-spacing: 1px;">
+        <i class="bi bi-building me-1"></i> Business Info
+    </h6>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label for="id_business_name" class="form-label">Business Name <span class="text-danger">*</span></label>
+            {{ form.business_name }}
+            {% if form.business_name.errors %}
+            <div class="text-danger small mt-1">{{ form.business_name.errors|first }}</div>
+            {% endif %}
+        </div>
+
+        <div class="col-12">
+            <label for="id_business_address" class="form-label">Business Address <span
+                    class="text-danger">*</span></label>
+            {{ form.business_address }}
+            {% if form.business_address.errors %}
+            <div class="text-danger small mt-1">{{ form.business_address.errors|first }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="mt-4 mb-4 form-check">
+        {{ form.agree_terms }}
+        <label class="form-check-label text-muted small" for="id_agree_terms">
+            I agree to the <a href="#" class="text-primary fw-bold">Terms & Conditions</a> and
+            <a href="#" class="text-primary fw-bold">Privacy Policy</a>
+        </label>
+        {% if form.agree_terms.errors %}
+        <div class="text-danger small mt-1">{{ form.agree_terms.errors|first }}</div>
+        {% endif %}
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary w-100 py-3 mb-3 shadow-sm">
+        ✨ Create Account
+    </button>
+
+    <!-- Login Link -->
+    <p class="text-center mb-0 text-muted">
+        Already have an account?
+        <a href="{% url 'accounts:login' %}" class="text-primary fw-bold">Sign in</a>
+    </p>
+</form>
+{% endblock %}

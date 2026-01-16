@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - ShopCredit{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pending Suggestions</h5>
+                {% if user.role == 'admin' or user.role == 'wholesaler' %}
+                <span class="badge bg-primary">Action Required</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if suggestions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Shop Owner</th>
+                                <th>Current Limit</th>
+                                <th>Suggested Limit</th>
+                                <th>Difference</th>
+                                <th>Factors</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for suggestion in suggestions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-light rounded-circle text-center me-2"
+                                            style="width: 32px; height: 32px; line-height: 32px;">
+                                            {{ suggestion.user.username|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">{{ suggestion.user.username }}</div>
+                                            <small class="text-muted">{{ suggestion.user.role|title }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Rs.{{ suggestion.current_limit|floatformat:0 }}</td>
+                                <td class="fw-bold text-primary">Rs.{{ suggestion.suggested_limit|floatformat:0 }}</td>
+                                <td>
+                                    {% if suggestion.limit_difference > 0 %}
+                                    <span class="text-success">+Rs.{{ suggestion.limit_difference|floatformat:0 }}</span>
+                                    {% else %}
+                                    <span class="text-danger">Rs.{{ suggestion.limit_difference|floatformat:0 }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ suggestion.feature_data.keys|length }}
+                                        factors</span>
+                                </td>
+                                <td>{{ suggestion.suggestion_date|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'analytics:credit_detail' suggestion.user.pk %}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3" style="font-size: 3rem;">✅</div>
+                    <h4>No Pending Suggestions</h4>
+                    <p class="text-muted">All credit limit reviews are up to date.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

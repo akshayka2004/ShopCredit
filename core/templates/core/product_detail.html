@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - ShopCredit{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <!-- Product Image -->
+    <div class="col-lg-5 mb-4">
+        <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
+            {% if product.get_image_url %}
+            <img src="{{ product.get_image_url }}" class="w-100" style="object-fit: cover; max-height: 450px;">
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-light" style="min-height: 350px;">
+                <div class="text-center text-muted">
+                    <div style="font-size: 5rem; opacity: 0.5;">📦</div>
+                    <p class="mt-2 mb-0">No Image Available</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Product Details -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <!-- Header: Name & Edit -->
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-2">{{ product.name }}</h2>
+                    <span class="text-muted">SKU: {{ product.sku }}</span>
+                    {% if user.role == 'wholesaler' and product.wholesaler == user %}
+                    <div class="mt-2">
+                        <a href="{% url 'core:product_edit' product.pk %}" class="btn btn-outline-primary btn-sm">
+                            ✏️ Edit Product
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Price -->
+                <div class="text-center py-4 mb-4 rounded-3"
+                    style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);">
+                    <span class="text-white-50 d-block mb-1">Price per unit</span>
+                    <span class="h1 text-white fw-bold">₹{{ product.unit_price|floatformat:2 }}</span>
+                </div>
+
+                <!-- Description -->
+                {% if product.description %}
+                <div class="mb-4">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2"
+                        style="font-size: 0.75rem; letter-spacing: 0.5px;">Description</h6>
+                    <p class="text-dark">{{ product.description|linebreaks }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Info Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 text-center h-100"
+                            style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1"
+                                style="font-size: 0.7rem;">Availability</small>
+                            {% if product.stock_quantity > 0 %}
+                            <span class="badge bg-success mb-1">In Stock</span>
+                            <div class="fw-bold text-success">{{ product.stock_quantity }} units</div>
+                            {% else %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 text-center h-100"
+                            style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                            <small class="text-muted text-uppercase fw-semibold d-block mb-1"
+                                style="font-size: 0.7rem;">Category</small>
+                            <div class="fw-bold text-primary">{{ product.category.name }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                {% if user.role == 'shop_owner' %}
+                <div class="d-grid gap-2">
+                    {% if product.stock_quantity > 0 %}
+                    <form action="{% url 'core:order_create' %}" method="get">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3" style="border-radius: 12px;">
+                            🛒 Add to New Order
+                        </button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-secondary btn-lg w-100 py-3" style="border-radius: 12px;" disabled>
+                        Out of Stock
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Seller Info -->
+                <div class="mt-4 pt-4 border-top text-center">
+                    <small class="text-muted">
+                        Sold by <span class="fw-bold text-dark">{{ product.wholesaler.username }}</span>
+                        {% if product.wholesaler.profile.business_name %}
+                        <br><span class="text-primary">{{ product.wholesaler.profile.business_name }}</span>
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Back Button -->
+<div class="text-center mt-4">
+    <a href="{% url 'core:product_list' %}" class="btn btn-outline-secondary">← Back to Products</a>
+</div>
+{% endblock %}

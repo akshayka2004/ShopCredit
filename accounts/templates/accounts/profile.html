@@ -1,0 +1,165 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}My Profile - ShopCredit{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="card profile-card">
+            <div class="card-body text-center py-4">
+                <!-- Avatar -->
+                <div class="mb-4">
+                    {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm"
+                        style="width: 120px; height: 120px; object-fit: cover; border: 4px solid rgba(0,137,123,0.2);">
+                    {% else %}
+                    <div class="user-avatar mx-auto shadow-sm" style="width: 120px; height: 120px; font-size: 3rem;">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <h4 class="fw-bold mb-2">{{ profile.business_name|default:user.username }}</h4>
+
+                <span class="badge bg-primary mb-3" style="font-size: 0.85rem; padding: 8px 16px;">{{ user.get_role_display }}</span>
+
+
+                <p class="text-muted mb-1">{{ user.email }}</p>
+                {% if user.phone %}
+                <p class="text-muted mb-0">{{ user.phone }}</p>
+                {% endif %}
+
+                <hr class="my-4">
+
+                <a href="{% url 'accounts:profile_edit' %}" class="btn btn-primary w-100 py-2">
+                    Edit Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Account Status -->
+        <div class="card mt-4">
+            <div class="card-header">Account Status</div>
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                    <span class="fw-medium">Verification</span>
+                    {% if user.is_verified %}
+                    <span class="badge bg-success">Verified</span>
+                    {% else %}
+                    <span class="badge bg-warning">Pending</span>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                    <span class="fw-medium">Member Since</span>
+                    <span class="text-muted">{{ user.date_joined|date:"d M Y" }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-3">
+                    <span class="fw-medium">Last Login</span>
+                    <span class="text-muted">{{ user.last_login|date:"d M Y H:i"|default:"Never" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="col-lg-8">
+        <!-- Business Information -->
+        <div class="card mb-4">
+            <div class="card-header">Business Information</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Business Name</label>
+                        <p class="mb-0 fw-bold">{{ profile.business_name|default:"Not set" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">GST Number</label>
+                        <p class="mb-0 fw-bold">{{ profile.gst_number|default:"Not provided" }}</p>
+                    </div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label text-muted">Business Address</label>
+                    <p class="mb-0">{{ profile.business_address|default:"Not provided"|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+
+        {% if user.role == 'shop_owner' %}
+        <!-- Credit Information (Shop Owner only) -->
+        <div class="card mb-4">
+            <div class="card-header">Credit Information</div>
+            <div class="card-body">
+                <div class="risk-stat-cards">
+                    <div class="risk-stat-card low">
+                        <h3>Rs.{{ profile.credit_limit|floatformat:0 }}</h3>
+                        <small>Credit Limit</small>
+                    </div>
+                    <div class="risk-stat-card medium">
+                        <h3>Rs.{{ profile.current_outstanding|floatformat:0 }}</h3>
+                        <small>Outstanding</small>
+                    </div>
+                    <div class="risk-stat-card" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+                        <h3 style="color: #1d4ed8;">{{ profile.credit_score }}</h3>
+                        <small style="color: #2563eb;">Credit Score</small>
+                    </div>
+                </div>
+
+                <!-- Risk Category -->
+                <div class="text-center mt-4">
+                    <span class="badge risk-{{ profile.risk_category }}" style="font-size: 1rem; padding: 10px 20px;">
+                        {% if profile.risk_category == 'low' %}Low Risk{% elif profile.risk_category == 'medium'
+                        %}Medium Risk{% else %}High Risk{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Transactions -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Recent Activity</span>
+                <a href="{% url 'core:transaction_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                            <tr>
+                                <td>{{ txn.transaction_date|date:"d M Y" }}</td>
+                                <td>
+                                    {% if txn.transaction_type == 'credit' %}
+                                    <span class="badge bg-warning">Credit</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Payment</span>
+                                    {% endif %}
+                                </td>
+                                <td>Rs.{{ txn.amount|floatformat:2 }}</td>
+                                <td>{{ txn.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <p>No recent activity</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

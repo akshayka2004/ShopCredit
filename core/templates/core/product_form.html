@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - ShopCredit{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>{{ title }}</span>
+                <a href="{% url 'core:product_list' %}" class="btn btn-sm btn-outline-secondary">Back to Products</a>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="needs-validation">
+                    {% csrf_token %}
+
+                    <!-- Product Basic Info -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3" style="color: var(--primary-color);">Basic Information</h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_name" class="form-label">Product Name *</label>
+                                <input type="text" name="name" id="id_name"
+                                    class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+                                    value="{{ form.name.value|default:'' }}" required>
+                                {% if form.name.errors %}
+                                <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_sku" class="form-label">SKU (Stock Keeping Unit) *</label>
+                                <input type="text" name="sku" id="id_sku"
+                                    class="form-control {% if form.sku.errors %}is-invalid{% endif %}"
+                                    value="{{ form.sku.value|default:'' }}" required>
+                                {% if form.sku.errors %}
+                                <div class="invalid-feedback">{{ form.sku.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">Description</label>
+                            <textarea name="description" id="id_description" class="form-control"
+                                rows="3">{{ form.description.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_category" class="form-label">Category</label>
+                            <select name="category" id="id_category" class="form-select">
+                                <option value="">-- Select Category --</option>
+                                {% for choice in form.category.field.queryset %}
+                                <option value="{{ choice.pk }}" {% if
+                                    form.category.value|stringformat:"s"==choice.pk|stringformat:"s" %}selected{% endif
+                                    %}>
+                                    {{ choice.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pricing & Stock -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3" style="color: var(--primary-color);">Pricing & Stock</h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_unit_price" class="form-label">Unit Price (Rs.) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rs.</span>
+                                    <input type="number" name="unit_price" id="id_unit_price"
+                                        class="form-control {% if form.unit_price.errors %}is-invalid{% endif %}"
+                                        value="{{ form.unit_price.value|default:'' }}" step="0.01" min="0" required>
+                                </div>
+                                {% if form.unit_price.errors %}
+                                <div class="text-danger small mt-1">{{ form.unit_price.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_stock_quantity" class="form-label">Stock Quantity *</label>
+                                <input type="number" name="stock_quantity" id="id_stock_quantity"
+                                    class="form-control {% if form.stock_quantity.errors %}is-invalid{% endif %}"
+                                    value="{{ form.stock_quantity.value|default:'0' }}" min="0" required>
+                                {% if form.stock_quantity.errors %}
+                                <div class="invalid-feedback">{{ form.stock_quantity.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Settings -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3" style="color: var(--primary-color);">Additional Settings</h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_min_order_quantity" class="form-label">Minimum Order Quantity</label>
+                                <input type="number" name="min_order_quantity" id="id_min_order_quantity"
+                                    class="form-control" value="{{ form.min_order_quantity.value|default:'1' }}"
+                                    min="1">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" name="is_active" id="id_is_active" class="form-check-input"
+                                        {% if form.is_active.value %}checked{% endif %}>
+                                    <label for="id_is_active" class="form-check-label">Product is Active</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Image -->
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3" style="color: var(--primary-color);">Product Image</h6>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_image" class="form-label">Upload Image</label>
+                                <input type="file" name="image" id="id_image" class="form-control" accept="image/*">
+                                <small class="text-muted">Upload an image from your computer</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="id_image_url" class="form-label">Or Paste Image URL</label>
+                                <input type="url" name="image_url" id="id_image_url" class="form-control"
+                                    placeholder="https://example.com/image.jpg"
+                                    value="{{ form.image_url.value|default:'' }}">
+                                <small class="text-muted">Paste an external image link</small>
+                            </div>
+                        </div>
+
+                        {% if form.instance.get_image_url %}
+                        <div class="mb-3">
+                            <label class="form-label">Current Image</label>
+                            <div>
+                                <img src="{{ form.instance.get_image_url }}" alt="Current image"
+                                    style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex gap-3 pt-3 border-top">
+                        <button type="submit" class="btn btn-primary px-4">
+                            {{ action }} Product
+                        </button>
+                        <a href="{% url 'core:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

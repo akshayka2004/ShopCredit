@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - ShopCredit{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<!-- Enhanced Filter Card -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Filter Products</span>
+        <a href="{% url 'core:product_list' %}" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <!-- Category Filter -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Category</label>
+                <select name="category" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                    {% with cat_id=cat.id|stringformat:"s" %}
+                    <option value="{{ cat.id }}" {% if selected_category == cat_id %}selected{% endif %}>
+                        {{ cat.name }}
+                    </option>
+                    {% endwith %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Stock Status Filter -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Stock Status</label>
+                <select name="stock" class="form-select" onchange="this.form.submit()">
+                    <option value="">All</option>
+                    <option value="in_stock" {% if request.GET.stock == 'in_stock' %}selected{% endif %}>In Stock</option>
+                    <option value="out_of_stock" {% if request.GET.stock == 'out_of_stock' %}selected{% endif %}>Out of
+                        Stock</option>
+                </select>
+            </div>
+
+            <!-- Price Range Filter -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Min Price</label>
+                <input type="number" name="min_price" class="form-control" placeholder="0"
+                    value="{{ request.GET.min_price }}" min="0">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">Max Price</label>
+                <input type="number" name="max_price" class="form-control" placeholder="10000"
+                    value="{{ request.GET.max_price }}" min="0">
+            </div>
+
+            <!-- Search -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Search</label>
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Name, SKU..."
+                        value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if user.role == 'wholesaler' %}
+<div class="mb-4 text-end">
+    <a href="{% url 'core:product_add' %}" class="btn btn-success">+ Add Product</a>
+</div>
+{% endif %}
+
+<!-- Product Grid -->
+<div class="row g-4">
+    {% for product in products %}
+    <div class="col-sm-6 col-lg-4">
+        <div class="card h-100 product-card card-animated shadow-sm border-0"
+            style="border-radius: 16px; overflow: hidden;">
+            <!-- Product Image -->
+            <div style="position: relative; overflow: hidden;">
+                {% if product.get_image_url %}
+                <img src="{{ product.get_image_url }}" class="card-img-top"
+                    style="width: 100%; height: 180px; object-fit: contain; background-color: #f8f9fa; transition: transform 0.5s ease;">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center bg-light text-muted"
+                    style="width: 100%; height: 180px; font-size: 3rem;">Box</div>
+                {% endif %}
+                <!-- Stock Badge -->
+                <div class="position-absolute top-0 end-0 p-2">
+                    {% if product.stock_quantity > 0 %}
+                    <span class="badge bg-success shadow-sm">In Stock</span>
+                    {% else %}
+                    <span class="badge bg-danger shadow-sm">Out of Stock</span>
+                    {% endif %}
+                </div>
+                {% if product.category %}
+                <div class="position-absolute bottom-0 start-0 p-2">
+                    <span class="badge bg-primary bg-opacity-75">{{ product.category.name }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Card Content -->
+            <div class="card-body d-flex flex-column p-3">
+                <div class="text-center mb-2">
+                    <h6 class="card-title fw-bold mb-1 text-dark" style="font-size: 1rem;">{{ product.name }}</h6>
+                    <small class="text-muted">SKU: {{ product.sku }}</small>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center py-2 px-3 mb-3 rounded-3"
+                    style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+                    <div class="text-center">
+                        <span class="h5 mb-0 fw-bold text-primary">Rs.{{ product.unit_price|floatformat:0 }}</span>
+                    </div>
+                    <div class="text-center">
+                        <small class="text-muted d-block">Stock</small>
+                        <span
+                            class="fw-semibold {% if product.stock_quantity > 10 %}text-success{% elif product.stock_quantity > 0 %}text-warning{% else %}text-danger{% endif %}">{{ product.stock_quantity }} units</span>
+                    </div>
+                </div>
+
+                <div class="mt-auto">
+                    <a href="{% url 'core:product_detail' product.pk %}"
+                        class="btn btn-primary w-100 fw-semibold py-2">View Details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="mb-3" style="font-size: 4rem; opacity: 0.5;">Search</div>
+        <h4 class="text-muted">No Products Found</h4>
+        <p class="text-muted mb-0">Try adjusting your filters or search query</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

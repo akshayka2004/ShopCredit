@@ -1,0 +1,43 @@
+# ShopCredit: Intelligent Digital Udhaar System
+# Requirements File - pip install -r requirements.txt
+
+# ==============================================================================
+# DJANGO FRAMEWORK
+# ==============================================================================
+Django>=4.2,<5.0
+
+# ==============================================================================
+# DATABASE
+# ==============================================================================
+# MySQL connector for Django
+mysqlclient>=2.2.0
+
+# ==============================================================================
+# MACHINE LEARNING
+# ==============================================================================
+# Scikit-learn for ML algorithms (Random Forest, Linear Regression, K-Means)
+scikit-learn>=1.3.0
+
+# NumPy and Pandas for data manipulation
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Joblib for saving/loading ML models (.pkl files)
+joblib>=1.3.0
+
+# ==============================================================================
+# PDF GENERATION
+# ==============================================================================
+# ReportLab for generating PDF invoices and reports
+reportlab>=4.0.0
+
+# ==============================================================================
+# IMAGE HANDLING (Optional - for profile pictures, product images)
+# ==============================================================================
+Pillow>=10.0.0
+
+# ==============================================================================
+# DEVELOPMENT TOOLS
+# ==============================================================================
+# For better Django shell experience
+ipython>=8.0.0

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - ShopCredit{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<!-- Premium Welcome Banner -->
+<div class="welcome-banner">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h2>Welcome back, {{ user.username }}! 👋</h2>
+            <p>Monitor your ShopCredit platform performance and manage all operations from here.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <span class="banner-badge">
+                <span>📅</span> {% now "F j, Y" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Row 1 -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary h-100 card-animated">
+            <div class="card-body">
+                <div class="stat-icon">👥</div>
+                <div class="stat-value">{{ total_users|default:"0" }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card success h-100 card-animated">
+            <div class="card-body">
+                <div class="stat-icon">🏪</div>
+                <div class="stat-value">{{ shop_owners|default:"0" }}</div>
+                <div class="stat-label">Shop Owners</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary h-100 card-animated">
+            <div class="card-body">
+                <div class="stat-icon">🏭</div>
+                <div class="stat-value">{{ wholesalers|default:"0" }}</div>
+                <div class="stat-label">Wholesalers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card warning h-100 card-animated">
+            <div class="card-body">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₹{{ total_outstanding|floatformat:0|default:"0" }}</div>
+                <div class="stat-label">Total Outstanding</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk & Users Row -->
+<div class="row mb-4">
+    <!-- Risk Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <span>📊 Risk Distribution</span>
+            </div>
+            <div class="card-body">
+                <div class="risk-stat-cards">
+                    <div class="risk-stat-card low">
+                        <h3>{{ low_risk|default:"0" }}</h3>
+                        <small>Low Risk</small>
+                    </div>
+                    <div class="risk-stat-card medium">
+                        <h3>{{ medium_risk|default:"0" }}</h3>
+                        <small>Medium</small>
+                    </div>
+                    <div class="risk-stat-card high">
+                        <h3>{{ high_risk|default:"0" }}</h3>
+                        <small>High Risk</small>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 220px;">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>👤 Recent Users</span>
+                <a href="/admin/accounts/customuser/" class="btn btn-sm btn-outline-primary" target="_blank">View
+                    All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_users %}
+                <div class="table-responsive">
+                    <table class="table table-premium mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in recent_users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                            {{ u.username|slice:":1"|upper }}
+                                        </div>
+                                        <span class="fw-semibold">{{ u.username }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ u.get_role_display }}</span>
+                                </td>
+                                <td>
+                                    {% if u.is_verified %}
+                                    <span class="risk-badge low">Verified</span>
+                                    {% else %}
+                                    <span class="risk-badge medium">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <span class="empty-state-icon">👥</span>
+                    <h5>No Users Yet</h5>
+                    <p>Users will appear here once they register.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card quick-actions">
+    <div class="card-header">🚀 Quick Actions</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <a href="/admin/" class="btn btn-primary w-100 py-3" target="_blank">
+                    <span class="btn-icon">⚙️</span> Django Admin
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'analytics:dashboard' %}" class="btn btn-success w-100 py-3">
+                    <span class="btn-icon">📊</span> Analytics
+                </a>
+            </div>
+            <div class="col-md-4 mb-3">
+                <a href="{% url 'analytics:risk_overview' %}" class="btn btn-outline-primary w-100 py-3">
+                    <span class="btn-icon">⚠️</span> Risk Overview
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var lowRiskVal = parseInt("{{ low_risk|default:'0' }}") || 0;
+    var mediumRiskVal = parseInt("{{ medium_risk|default:'0' }}") || 0;
+    var highRiskVal = parseInt("{{ high_risk|default:'0' }}") || 0;
+
+    const riskCtx = document.getElementById('riskChart');
+    if (riskCtx) {
+        new Chart(riskCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                datasets: [{
+                    data: [lowRiskVal, mediumRiskVal, highRiskVal],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    }
+                },
+                cutout: '65%'
+            }
+        });
+    }
+</script>
+{% endblock %}

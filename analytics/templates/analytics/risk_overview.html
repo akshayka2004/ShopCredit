@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Risk Assessment - ShopCredit{% endblock %}
+{% block page_title %}Risk Assessment{% endblock %}
+
+{% block content %}
+<!-- Risk Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center" style="border-left: 4px solid #00897b;">
+            <div class="card-body">
+                <h2 class="text-success">{{ predictions|length }}</h2>
+                <p class="text-muted mb-0">Total Customers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center" style="border-left: 4px solid #f57c00;">
+            <div class="card-body">
+                <h2 class="text-warning">-</h2>
+                <p class="text-muted mb-0">Medium Risk</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center" style="border-left: 4px solid #c62828;">
+            <div class="card-body">
+                <h2 class="text-danger">-</h2>
+                <p class="text-muted mb-0">High Risk</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Table -->
+<div class="card">
+    <div class="card-header">Customer Risk Analysis</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Business</th>
+                        <th>Outstanding</th>
+                        <th>Credit Utilization</th>
+                        <th>Risk Level</th>
+                        <th>Default Probability</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in predictions %}
+                    <tr
+                        class="{% if item.user.profile.risk_category == 'high' %}table-danger{% elif item.user.profile.risk_category == 'medium' %}table-warning{% endif %}">
+                        <td>
+                            <strong>{{ item.user.username|humanize_name }}</strong>
+                        </td>
+                        <td>{{ item.user.profile.business_name|default:"-"|humanize_name }}</td>
+                        <td>₹{{ item.user.profile.current_outstanding|floatformat:0 }}</td>
+                        <td>
+                            {% with util=item.user.profile.credit_utilization_percentage %}
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1"
+                                    style="height: 8px; min-width: 80px; max-width: 100px; border-radius: 4px;">
+                                    <div class="progress-bar {% if util > 100 %}bg-danger{% elif util > 80 %}bg-warning{% elif util > 50 %}bg-info{% else %}bg-success{% endif %}"
+                                        style="width: {{ util|cap_percentage:100 }}%; border-radius: 4px;"></div>
+                                </div>
+                                <small
+                                    class="fw-bold {% if util > 100 %}text-danger{% elif util > 80 %}text-warning{% else %}text-muted{% endif %}">
+                                    {{ util|floatformat:0 }}%
+                                </small>
+                            </div>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <span class="badge risk-{{ item.user.profile.risk_category }}">
+                                {{ item.user.profile.get_risk_category_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.prediction and item.prediction.default_probability %}
+                            <span
+                                class="{% if item.prediction.default_probability > 50 %}text-danger fw-bold{% elif item.prediction.default_probability > 20 %}text-warning{% endif %}">
+                                {{ item.prediction.default_probability|floatformat:1 }}%
+                            </span>
+                            {% else %}
+                            <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'analytics:risk_detail' item.user.pk %}"
+                                class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            No customers found
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

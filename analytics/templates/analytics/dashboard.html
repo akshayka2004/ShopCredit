@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - ShopCredit{% endblock %}
+{% block page_title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<!-- Premium Welcome Banner -->
+<div class="welcome-banner" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #1e293b 100%);">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <h2>📊 Analytics Overview</h2>
+            <p>Monitor platform performance, track risk metrics, and gain ML-powered insights.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <span class="banner-badge">
+                <span>🤖</span> ML-Powered Insights
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card success card-animated">
+            <div class="card-body">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value">₹{{ credit_stats.total_outstanding|floatformat:0|default:"0" }}</div>
+                <div class="stat-label">Total Outstanding</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary card-animated">
+            <div class="card-body">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value">{{ order_stats.total|default:"0" }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card {% if emi_stats.overdue > 0 %}danger{% else %}success{% endif %} card-animated">
+            <div class="card-body">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value">{{ emi_stats.pending|default:"0" }}</div>
+                <div class="stat-label">
+                    Pending EMIs
+                    {% if emi_stats.overdue > 0 %}
+                    <span class="badge bg-danger ms-1">{{ emi_stats.overdue }} overdue</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card stat-card primary card-animated">
+            <div class="card-body">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value">{{ credit_stats.avg_score|floatformat:0|default:"--" }}</div>
+                <div class="stat-label">Avg Credit Score</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Risk Distribution Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card chart-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>⚠️ Risk Distribution</span>
+                <a href="{% url 'analytics:risk_overview' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="risk-stat-cards">
+                    <div class="risk-stat-card low">
+                        <h4>{{ risk_counts.low|default:"0" }}</h4>
+                        <small>Low Risk</small>
+                    </div>
+                    <div class="risk-stat-card medium">
+                        <h4>{{ risk_counts.medium|default:"0" }}</h4>
+                        <small>Medium</small>
+                    </div>
+                    <div class="risk-stat-card high">
+                        <h4>{{ risk_counts.high|default:"0" }}</h4>
+                        <small>High Risk</small>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repayment Trends Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card chart-card h-100">
+            <div class="card-header">📈 Repayment Trends (30 Days)</div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="repaymentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sales Trends -->
+    <div class="col-lg-8 mb-4">
+        <div class="card chart-card h-100">
+            <div class="card-header">💳 Daily Sales (30 Days)</div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 320px;">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ML Model Status -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">🤖 ML Model Status</div>
+            <div class="card-body">
+                <div class="model-status-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="model-name">Risk Prediction</span>
+                            <span class="model-type d-block">Random Forest Classifier</span>
+                        </div>
+                        {% if models_status.risk_prediction %}
+                        <span class="badge bg-success"><span class="status-dot active"></span>Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><span class="status-dot inactive"></span>Not Trained</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="model-status-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="model-name">Credit Limit</span>
+                            <span class="model-type d-block">Linear Regression</span>
+                        </div>
+                        {% if models_status.credit_limit %}
+                        <span class="badge bg-success"><span class="status-dot active"></span>Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><span class="status-dot inactive"></span>Not Trained</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="model-status-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="model-name">Segmentation</span>
+                            <span class="model-type d-block">K-Means Clustering</span>
+                        </div>
+                        {% if models_status.shop_segment %}
+                        <span class="badge bg-success"><span class="status-dot active"></span>Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary"><span class="status-dot inactive"></span>Not Trained</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if user.role == 'admin' %}
+                <hr>
+                <div class="p-3 rounded-3" style="background: var(--sc-gray-50);">
+                    <small class="text-muted d-block mb-2">Train models with:</small>
+                    <code class="d-block p-2 bg-white rounded"
+                        style="font-size: 0.8rem;">python manage.py train_models</code>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="card quick-actions">
+    <div class="card-header">🚀 Analytics Actions</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'analytics:risk_overview' %}" class="btn btn-outline-danger w-100 py-3">
+                    <span class="btn-icon">⚠️</span> Risk Assessment
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'analytics:credit_overview' %}" class="btn btn-outline-success w-100 py-3">
+                    <span class="btn-icon">💳</span> Credit Limits
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'analytics:segment_overview' %}" class="btn btn-outline-primary w-100 py-3">
+                    <span class="btn-icon">👥</span> Segmentation
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'reports:daily_summary' %}" class="btn btn-outline-secondary w-100 py-3">
+                    <span class="btn-icon">📄</span> Daily Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Chart.js default styling
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    // Risk Distribution Chart
+    fetch('{% url "analytics:chart_risk" %}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('riskChart'), {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        });
+
+    // Repayment Chart
+    fetch('{% url "analytics:chart_repayment" %}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('repaymentChart'), {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4,
+                            borderWidth: 3
+                        },
+                        point: {
+                            radius: 4,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            });
+        });
+
+    // Sales Chart
+    fetch('{% url "analytics:chart_sales" %}')
+        .then(response => response.json())
+        .then(data => {
+            new Chart(document.getElementById('salesChart'), {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            align: 'end'
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4,
+                            borderWidth: 3,
+                            fill: true
+                        },
+                        point: {
+                            radius: 0,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            });
+        });
+</script>
+{% endblock %}

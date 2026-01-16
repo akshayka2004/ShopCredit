@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Order {{ order.order_number }} - ShopCredit{% endblock %}
+{% block page_title %}Order Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Order Information -->
+    <div class="col-lg-8">
+        <!-- Order Header -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>📋 {{ order.order_number }}</span>
+                <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Shop Owner:</strong> {{ order.shop_owner.profile.business_name|default:order.shop_owner.username }}</p>
+                        <p class="mb-1"><strong>Wholesaler:</strong> {{ order.wholesaler.profile.business_name|default:order.wholesaler.username }}</p>
+                        <p class="mb-0"><strong>Order Date:</strong> {{ order.order_date|date:"d M Y" }}</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="mb-1"><strong>Due Date:</strong> {{ order.due_date|date:"d M Y" }}</p>
+                        {% if order.approval_date %}
+                        <p class="mb-1"><strong>Approved:</strong> {{ order.approval_date|date:"d M Y" }}</p>
+                        {% endif %}
+                        {% if order.delivery_date %}
+                        <p class="mb-0"><strong>Delivered:</strong> {{ order.delivery_date|date:"d M Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if order.notes %}
+                <hr>
+                <p class="mb-0 text-muted"><strong>Notes:</strong> {{ order.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="card mb-4">
+            <div class="card-header">📦 Order Items</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-end">₹{{ item.unit_price|floatformat:2 }}</td>
+                                <td class="text-end">₹{{ item.total_price|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="3" class="text-end"><strong>Total Amount</strong></td>
+                                <td class="text-end"><strong class="text-primary h5">₹{{ order.total_amount|floatformat:2 }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMI Schedule -->
+        {% if emis %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>📅 EMI Payment Schedule</span>
+                <span>
+                    <span class="badge bg-success">Paid: ₹{{ paid_amount|floatformat:2 }}</span>
+                    <span class="badge bg-warning">Pending: ₹{{ pending_amount|floatformat:2 }}</span>
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>EMI #</th>
+                                <th>Amount</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emi in emis %}
+                            <tr
+                                class="{% if emi.is_paid %}table-success{% elif emi.days_overdue > 0 %}table-danger{% endif %}">
+                                <td>{{ emi.installment_number }}</td>
+                                <td>₹{{ emi.amount|floatformat:2 }}</td>
+                                <td>{{ emi.due_date|date:"d M Y" }}</td>
+                                <td>
+                                    {% if emi.is_paid %}
+                                    <span class="badge bg-success">✓ Paid{% if emi.is_late %} (Late){% endif %}</span>
+                                    {% elif emi.days_overdue > 0 %}
+                                    <span class="badge bg-danger">{{ emi.days_overdue }} days overdue</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not emi.is_paid %}
+                                    <a href="{% url 'core:emi_pay' emi.pk %}" class="btn btn-sm btn-primary">
+                                        💳 Pay Now
+                                    </a>
+                                    {% else %}
+                                    <small class="text-muted">{{ emi.paid_date|date:"d M Y" }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Payment Summary -->
+        <div class="card mb-4">
+            <div class="card-header">💰 Payment Summary</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Amount</span>
+                    <strong>₹{{ order.total_amount|floatformat:2 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2 text-success">
+                    <span>Paid</span>
+                    <strong>₹{{ paid_amount|floatformat:2 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3 text-warning">
+                    <span>Remaining</span>
+                    <strong>₹{{ pending_amount|floatformat:2 }}</strong>
+                </div>
+
+                <!-- Progress Bar -->
+                {% with payment_percentage=paid_amount|divisibleby:order.total_amount %}
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-success"
+                        style="width: {% widthratio paid_amount order.total_amount 100 %}%"></div>
+                </div>
+                <small class="text-muted">{% widthratio paid_amount order.total_amount 100 %}% paid</small>
+                {% endwith %}
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card mb-4">
+            <div class="card-header">⚡ Actions</div>
+            <div class="card-body">
+                {% if order.status == 'pending' and user.role == 'wholesaler' %}
+                <a href="{% url 'core:order_approve' order.pk %}" class="btn btn-success w-100 mb-2">
+                    ✓ Approve Order
+                </a>
+                {% endif %}
+
+                {% if order.status == 'pending' %}
+                <a href="{% url 'core:order_cancel' order.pk %}" class="btn btn-outline-danger w-100 mb-2">
+                    ✕ Cancel Order
+                </a>
+                {% endif %}
+
+                <a href="{% url 'reports:invoice' order.pk %}" class="btn btn-outline-primary w-100 mb-2">
+                    📄 Download Invoice
+                </a>
+
+                <a href="{% url 'core:order_list' %}" class="btn btn-outline-secondary w-100">
+                    ← Back to Orders
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

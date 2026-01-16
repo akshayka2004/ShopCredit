@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Risk Detail - ShopCredit{% endblock %}
+{% block page_title %}Risk Analysis: {{ target_user.profile.business_name|default:target_user.username|humanize_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Dynamic Progress Bar Styles */
+    .dynamic-progress {
+        position: relative;
+        height: 28px;
+        background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 100%);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dynamic-progress .progress-fill {
+        height: 100%;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 12px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transition: width 1s ease-out;
+        animation: progressPulse 2s ease-in-out infinite;
+    }
+
+    .progress-low {
+        background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+    }
+
+    .progress-medium {
+        background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+    }
+
+    .progress-high {
+        background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    }
+
+    .progress-critical {
+        background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+    }
+
+    @keyframes progressPulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.9;
+        }
+    }
+
+    .progress-label {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    /* History Timeline */
+    .history-timeline {
+        position: relative;
+        padding-left: 24px;
+    }
+
+    .history-timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #00b4d8, #e2e8f0);
+        border-radius: 1px;
+    }
+
+    .history-item {
+        position: relative;
+        padding: 16px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .history-item:last-child {
+        border-bottom: none;
+    }
+
+    .history-item::before {
+        content: '';
+        position: absolute;
+        left: -20px;
+        top: 24px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #00b4d8;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-item.risk-high::before {
+        background: #ef4444;
+    }
+
+    .history-item.risk-medium::before {
+        background: #f59e0b;
+    }
+
+    .history-item.risk-low::before {
+        background: #10b981;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Current Prediction -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>🎯 Current Risk Assessment</span>
+                {% if user.role in 'admin,wholesaler' %}
+                <a href="{% url 'analytics:risk_predict' target_user.pk %}" class="btn btn-sm btn-primary">
+                    🔄 Re-analyze
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row text-center g-3">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 {% if prediction.risk_category == 'high' %}bg-danger text-white{% elif prediction.risk_category == 'medium' %}bg-warning{% else %}bg-success text-white{% endif %}"
+                            style="box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                            <h2 class="mb-1 fw-bold">{{ prediction.probability|floatformat:1 }}%</h2>
+                            <p class="mb-0 opacity-75">Default Probability</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 bg-light" style="box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                            <h2 class="mb-1 fw-bold text-primary">{{ prediction.risk_category|title }}</h2>
+                            <p class="mb-0 text-muted">Risk Category</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 bg-light" style="box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                            <h2 class="mb-1 fw-bold text-primary">{{ prediction.confidence|floatformat:0 }}%</h2>
+                            <p class="mb-0 text-muted">Confidence</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Factors with Dynamic Progress Bars -->
+        <div class="card mb-4">
+            <div class="card-header">📊 Risk Factors</div>
+            <div class="card-body">
+                <!-- Credit Utilization - Using profile data for accuracy -->
+                {% with util=target_user.profile.credit_utilization_percentage %}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="fw-semibold text-dark mb-0">Credit Utilization</label>
+                        <span
+                            class="badge {% if util > 100 %}bg-danger{% elif util > 80 %}bg-warning{% elif util > 50 %}bg-info{% else %}bg-success{% endif %}">
+                            {{ util|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="dynamic-progress">
+                        <div class="progress-fill {% if util > 100 %}progress-critical{% elif util > 80 %}progress-high{% elif util > 50 %}progress-medium{% else %}progress-low{% endif %}"
+                            style="width: {{ util|cap_percentage:100 }}%;">
+                            {% if util > 20 %}{{ util|floatformat:0 }}%{% endif %}
+                        </div>
+                    </div>
+
+                </div>
+                {% endwith %}
+
+                <!-- Late Payment Ratio -->
+                {% with ratio=prediction.features.late_payment_ratio|default:0 %}
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="fw-semibold text-dark mb-0">Late Payment Ratio</label>
+                        <span
+                            class="badge {% if ratio > 30 %}bg-danger{% elif ratio > 10 %}bg-warning{% else %}bg-success{% endif %}">
+                            {{ ratio|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="dynamic-progress">
+                        <div class="progress-fill {% if ratio > 30 %}progress-high{% elif ratio > 10 %}progress-medium{% else %}progress-low{% endif %}"
+                            style="width: {{ ratio|cap_percentage:100 }}%;">
+                            {% if ratio > 10 %}{{ ratio|floatformat:0 }}%{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+
+                <!-- Statistics Cards -->
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 text-center"
+                            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);">
+                            <strong class="fs-4 text-primary">{{ prediction.features.payment_delay_avg|floatformat:1|default:"0" }}</strong>
+                            <small class="d-block text-muted mt-1">Avg Payment Delay (days)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 text-center"
+                            style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                            <strong class="fs-4 text-success">{{ prediction.features.order_frequency|default:"0" }}</strong>
+                            <small class="d-block text-muted mt-1">Orders/Month</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 text-center"
+                            style="background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);">
+                            <strong class="fs-4 text-warning">{{ prediction.features.account_age_days|default:"0" }}</strong>
+                            <small class="d-block text-muted mt-1">Account Age (days)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- User Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">👤 Customer Info</div>
+            <div class="card-body">
+                <div class="mb-3 pb-3 border-bottom">
+                    <small class="text-muted text-uppercase fw-semibold">Business</small>
+                    <p class="mb-0 fw-bold">{{ target_user.profile.business_name|humanize_name }}</p>
+                </div>
+                <div class="mb-3 pb-3 border-bottom">
+                    <small class="text-muted text-uppercase fw-semibold">Credit Limit</small>
+                    <p class="mb-0 fw-bold text-primary">Rs.{{ target_user.profile.credit_limit|floatformat:0 }}</p>
+                </div>
+                <div class="mb-3 pb-3 border-bottom">
+                    <small class="text-muted text-uppercase fw-semibold">Outstanding</small>
+                    <p
+                        class="mb-0 fw-bold {% if target_user.profile.current_outstanding > target_user.profile.credit_limit %}text-danger{% else %}text-dark{% endif %}">
+                        Rs.{{ target_user.profile.current_outstanding|floatformat:0 }}
+                    </p>
+                </div>
+                <div>
+                    <small class="text-muted text-uppercase fw-semibold">Credit Score</small>
+                    <p class="mb-0 fw-bold">{{ target_user.profile.credit_score }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prediction History with Timeline -->
+        <div class="card">
+            <div class="card-header">📜 Prediction History</div>
+            <div class="card-body">
+                {% if history %}
+                <div class="history-timeline">
+                    {% for pred in history %}
+                    <div class="history-item risk-{{ pred.risk_category }}">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge risk-{{ pred.risk_category }}">{{ pred.get_risk_category_display }}</span>
+                            <small class="text-muted">{{ pred.prediction_date|date:"d M Y" }}</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold">{{ pred.default_probability|floatformat:1 }}%</span>
+                            <span class="text-muted">probability</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <div class="mb-2" style="font-size: 2rem;">📭</div>
+                    <p class="mb-0">No prediction history available</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'analytics:risk_overview' %}" class="btn btn-outline-secondary mt-3">← Back to Overview</a>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load static custom_filters %}
+
+{% block title %}{{ title }} - ShopCredit{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- User Profile Summary -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="avatar-lg bg-light rounded-circle mx-auto mb-3"
+                    style="width: 80px; height: 80px; line-height: 80px; font-size: 2rem;">
+                    {{ target_user.username|slice:":1"|upper }}
+                </div>
+                <h4 class="mb-1">{{ target_user.username }}</h4>
+                <p class="text-muted mb-3">{{ target_user.email }}</p>
+
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    <span class="badge bg-{{ target_user.profile.risk_category|yesno:'success,danger,warning' }}">
+                        {{ target_user.profile.risk_category|title }} Risk
+                    </span>
+                    <span class="badge bg-primary">Credit Score: {{ target_user.profile.credit_score }}</span>
+                </div>
+
+                <div class="border-top pt-3 text-start">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Current Limit:</span>
+                        <span class="fw-bold">Rs.{{ target_user.profile.credit_limit|floatformat:0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Outstanding:</span>
+                        <span class="fw-bold text-danger">Rs.{{ target_user.profile.current_outstanding|floatformat:0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if user.role != 'shop_owner' %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Actions</h5>
+                <a href="{% url 'analytics:credit_suggest' target_user.pk %}" class="btn btn-primary w-100 mb-2">
+                    Run New Analysis
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Analysis Results -->
+    <div class="col-md-8">
+        {% if suggestion %}
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Latest Analysis Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center border-end">
+                        <small class="text-muted d-block uppercase">Recommended Limit</small>
+                        <h2 class="text-primary display-6 fw-bold mb-0">Rs.{{ suggestion.suggested_limit|floatformat:0 }}</h2>
+                        {% if suggestion.difference > 0 %}
+                        <span class="badge bg-success">+Rs.{{ suggestion.difference|floatformat:0 }} increase</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Rs.{{ suggestion.difference|floatformat:0 }} change</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 ps-md-4">
+                        <h6 class="fw-bold mb-3">Key Factors:</h6>
+                        <ul class="list-unstyled">
+                            {% for factor, value in suggestion.factors.items %}
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span>{{ factor|humanize_name }}</span>
+                                <span class="fw-bold">{{ value }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- History -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Suggestion History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Suggested</th>
+                                <th>Change</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                            <tr>
+                                <td>{{ item.suggestion_date|date:"M d, Y" }}</td>
+                                <td class="fw-bold">Rs.{{ item.suggested_limit|floatformat:0 }}</td>
+                                <td>
+                                    {% if item.limit_difference > 0 %}
+                                    <span class="text-success">+{{ item.limit_difference|floatformat:0 }}</span>
+                                    {% else %}
+                                    <span class="text-danger">{{ item.limit_difference|floatformat:0 }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.is_approved %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not item.is_approved and user.role != 'shop_owner' %}
+                                    <form method="post" action="{% url 'analytics:credit_approve' item.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">No history available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

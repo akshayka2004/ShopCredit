@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Pay EMI - ShopCredit{% endblock %}
+{% block page_title %}Pay EMI #{{ emi.installment_number }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <a href="{% url 'core:order_detail' order.pk %}" class="btn btn-sm btn-outline-secondary me-2">←
+                    Back</a>
+                Payment for {{ order.order_number }}
+            </div>
+            <div class="card-body">
+                <!-- EMI Details -->
+                <div class="mb-4 p-3 bg-light rounded">
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">EMI Amount</small>
+                            <h4 class="text-primary mb-0">₹{{ emi.amount|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted">Due Date</small>
+                            <h4 class="mb-0">{{ emi.due_date|date:"d M Y" }}</h4>
+                        </div>
+                    </div>
+
+                    {% if emi.days_overdue > 0 %}
+                    <div class="alert alert-danger mt-3 mb-0">
+                        ⚠️ This payment is {{ emi.days_overdue }} days overdue
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Payment Form -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Amount (₹)</label>
+                        {{ form.amount }}
+                        <small class="text-muted">Pay the full EMI amount or a partial payment</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Payment Reference (Optional)</label>
+                        {{ form.payment_reference }}
+                        <small class="text-muted">UPI Transaction ID, Cheque Number, etc.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-3">
+                        💳 Confirm Payment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
