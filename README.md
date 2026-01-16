@@ -1,3 +1,4 @@
+HEAD
 # ShopCredit: Intelligent Digital Udhaar System
 ## Setup Guide
 
@@ -134,3 +135,7 @@ DATABASES = {
 | 4 | Dashboard UI | Bootstrap 5 templates, Chart.js visualizations |
 | 5 | PDF Generation | ReportLab invoice and report generation |
 | 6 | Seed Data | Sample data for demo |
+=======
+# ShopCredit
+ShopCredit is an intelligent digital credit management system designed to modernize the traditional "Udhaar" (credit) system used in Indian wholesale-retail business relationships. The system enables shop owners to purchase goods on credit from wholesalers, with built-in EMI payment schedules and AI-powered risk assessment.
+c35316cbecdd825326405c6fd5c4bf524e7acbf6
