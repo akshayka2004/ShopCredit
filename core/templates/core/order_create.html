@@ -183,31 +183,43 @@
     wholesalerSelect.addEventListener('change', async function () {
         const wholesalerId = this.value;
 
+        // Reset products and UI
+        availableProducts = [];
+        productsList.innerHTML = '';
+        orderItems = [];
+
         if (!wholesalerId) {
-            availableProducts = [];
-            productsList.innerHTML = '';
             noProductsMsg.style.display = 'block';
+            noProductsMsg.innerHTML = '<p>Select a wholesaler to see available products</p>';
             addProductBtn.disabled = true;
             updateSummary();
             return;
         }
 
         try {
-            // Simulated products - in real app, fetch from API
-            // const response = await fetch(`/core/api/products/${wholesalerId}/`);
-            // availableProducts = await response.json();
+            // Fetch products from API
+            const response = await fetch(`/core/api/products/${wholesalerId}/`);
+            const data = await response.json();
+            availableProducts = data.products || [];
 
-            // For now, enable adding products
-            addProductBtn.disabled = false;
-            noProductsMsg.style.display = 'none';
-
-            // Add first product row
-            if (productsList.children.length === 0) {
+            if (availableProducts.length === 0) {
+                noProductsMsg.style.display = 'block';
+                noProductsMsg.innerHTML = '<p class="text-warning">No products available from this wholesaler</p>';
+                addProductBtn.disabled = true;
+            } else {
+                noProductsMsg.style.display = 'none';
+                addProductBtn.disabled = false;
+                // Add first product row
                 addProductRow();
             }
         } catch (error) {
             console.error('Error fetching products:', error);
+            noProductsMsg.style.display = 'block';
+            noProductsMsg.innerHTML = '<p class="text-danger">Error loading products. Please try again.</p>';
+            addProductBtn.disabled = true;
         }
+
+        updateSummary();
     });
 
     // Add product row
@@ -217,18 +229,21 @@
         const template = document.getElementById('productRowTemplate');
         const row = template.content.cloneNode(true);
 
-        // Populate product select (simulated data for demo)
+        // Populate product select with real data from API
         const select = row.querySelector('.product-select');
-        select.innerHTML = `
-            <option value="">Select product...</option>
-            <option value="1" data-price="500">Product A - ₹500</option>
-            <option value="2" data-price="750">Product B - ₹750</option>
-            <option value="3" data-price="1200">Product C - ₹1200</option>
-        `;
+        let optionsHtml = '<option value="">Select product...</option>';
+
+        availableProducts.forEach(product => {
+            const price = parseFloat(product.unit_price).toFixed(2);
+            optionsHtml += `<option value="${product.id}" data-price="${product.unit_price}" data-stock="${product.stock_quantity}">${product.name} (${product.sku}) - ₹${price} (Stock: ${product.stock_quantity})</option>`;
+        });
+
+        select.innerHTML = optionsHtml;
 
         // Event listeners
         select.addEventListener('change', updateItemTotal);
         row.querySelector('.quantity-input').addEventListener('change', updateItemTotal);
+        row.querySelector('.quantity-input').addEventListener('input', updateItemTotal);
         row.querySelector('.remove-product').addEventListener('click', function () {
             this.closest('.product-row').remove();
             updateSummary();

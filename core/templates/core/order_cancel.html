@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancel Order {{ order.order_number }} - ShopCredit{% endblock %}
+{% block page_title %}Cancel Order{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <!-- Order Cancellation Card -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>⚠️ Cancel Order</span>
+                <span class="badge bg-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <div class="card-body">
+                <!-- Warning Alert -->
+                <div class="alert alert-danger" role="alert">
+                    <strong>⚠️ Warning:</strong> You are about to cancel order <strong>{{ order.order_number
+                        }}</strong>.
+                    {% if order.status == 'approved' %}
+                    <br><br>
+                    <strong>This order has been approved.</strong> Cancelling it will:
+                    <ul class="mb-0 mt-2">
+                        <li>Restore stock quantities</li>
+                        <li>Adjust the shop owner's outstanding balance</li>
+                        <li>Record a credit transaction</li>
+                    </ul>
+                    {% else %}
+                    This action will restore any reserved stock.
+                    {% endif %}
+                </div>
+
+                <!-- Order Summary -->
+                <div class="p-3 rounded mb-4" style="background: rgba(100, 116, 139, 0.1);">
+                    <h6 class="mb-3">Order Summary</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Order Number</small>
+                            <p class="mb-2"><strong>{{ order.order_number }}</strong></p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted">Total Amount</small>
+                            <p class="mb-2"><strong class="text-primary">₹{{ order.total_amount|floatformat:2
+                                    }}</strong></p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Shop Owner</small>
+                            <p class="mb-2"><strong>{{
+                                    order.shop_owner.profile.business_name|default:order.shop_owner.username }}</strong>
+                            </p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <small class="text-muted">Order Date</small>
+                            <p class="mb-0"><strong>{{ order.order_date|date:"d M Y" }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <h6 class="text-muted mb-2">Items to be Restored</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-center">Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.product_name }}</td>
+                                <td class="text-center">+{{ item.quantity }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Cancellation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg flex-grow-1">
+                            ✕ Confirm Cancellation
+                        </button>
+                        <a href="{% url 'core:order_detail' order.pk %}" class="btn btn-outline-secondary btn-lg">
+                            Go Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

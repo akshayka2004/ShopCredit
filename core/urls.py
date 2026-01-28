@@ -53,4 +53,9 @@ urlpatterns = [
     # CATEGORY URLS
     # ==========================================================================
     path('categories/', views.category_list, name='category_list'),
+    
+    # ==========================================================================
+    # API URLS
+    # ==========================================================================
+    path('api/products/<int:wholesaler_id>/', views.get_products_by_wholesaler, name='api_products_by_wholesaler'),
 ]
